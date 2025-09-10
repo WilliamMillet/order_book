@@ -25,6 +25,7 @@ class Order:
         trader: Trader
         ) -> None:
         
+        
         Order.validate_price(price)
         Order.validate_volume(volume)
         
@@ -48,7 +49,7 @@ class Order:
             raise ValueError("Order must be of side BUY or SELL")
 
     @staticmethod
-    def validate_price(price: float) -> None:
+    def validate_price(price: float | None) -> None:
         """Raise an error if price is invalid"""
         if price is not None and price <= 0:
             raise ValueError(

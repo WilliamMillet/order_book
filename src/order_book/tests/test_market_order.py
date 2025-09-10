@@ -93,7 +93,8 @@ def test_match_volume_gt_order(mkt: Market):
     bid = Order(None, 50, OrderSide.BUY, OrderType.MARKET, jane)
     eng.place_order(bid)
     
-    assert book.best_offer().volume == 25 
+    best_offer = book.best_offer()
+    assert best_offer is not None and best_offer.volume == 25
     assert book.best_bid() is None 
 
 def test_match_volume_lt_total_volume(mkt: Market):
@@ -111,7 +112,8 @@ def test_match_volume_lt_total_volume(mkt: Market):
     eng.place_order(bid)
 
     assert book.best_offer() is None
-    assert book.best_bid().volume == 25
+    best_bid = book.best_bid()
+    assert best_bid is not None and best_bid.volume == 25
 
 def test_match_volume_lt_order(mkt: Market):
     """
@@ -129,10 +131,9 @@ def test_match_volume_lt_order(mkt: Market):
     bid = Order(None, 70, OrderSide.BUY, OrderType.MARKET, jack)
     eng.place_order(bid)
 
-    assert book.best_offer().volume == 30
+    best_offer = book.best_offer()
+    assert best_offer is not None and best_offer.volume == 30
     assert book.best_bid() is None
-
-
 
 
 

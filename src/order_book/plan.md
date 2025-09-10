@@ -40,3 +40,5 @@
 
 To do 
 - comment the basic business logic for each order type processor
+Possible resources
+- Technical notes on order books https://gist.github.com/halfelf/db1ae032dc34278968f8bf31ee999a25
