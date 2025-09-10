@@ -8,6 +8,9 @@ from order_book.trader import Trader
 # price cannot be set under normal terms
 NO_PRICE = -1.0
 
+class OrderValueError(ValueError):
+    pass
+
 class OrderSide(Enum):
     BUY = "BUY"
     SELL = "SELL"
@@ -17,8 +20,6 @@ class OrderType(Enum):
     LIMIT = "LIMIT"
     FILL_OR_KILL = "FOK"
     IMMEDIATE_OR_CANCEL = "IOC"
-    QUOTE = "QUOTE"
-
 
 class Order:
     def __init__(
@@ -30,9 +31,11 @@ class Order:
         price: float = NO_PRICE
         ) -> None:
         
-        
         Order.validate_price(price)
         Order.validate_volume(volume)
+
+        if not price and order_type != OrderType.MARKET:
+            raise OrderValueError("Non-market order must contain a price")
         
         self.price = price
         self.volume = volume
@@ -42,7 +45,6 @@ class Order:
         self.timestamp = datetime.now()
 
         self.order_id = uuid.uuid4()
-
     
     @property
     def inverse_side(self) -> OrderSide:
@@ -52,7 +54,7 @@ class Order:
         elif self.order_side == OrderSide.SELL:
             return OrderSide.BUY
         else:
-            raise ValueError("Order must be of side BUY or SELL")
+            raise OrderValueError("Order must be of side BUY or SELL")
     
     def is_price_in_limit(self, price: float) -> bool:
         """Determine if a given price is within the limit for an order"""
@@ -68,7 +70,7 @@ class Order:
     def validate_price(price: float) -> None:
         """Raise an error if price is invalid"""
         if price != NO_PRICE and price <= 0:
-            raise ValueError(
+            raise OrderValueError(
                 f"Invalid order price ${price:.2f}. Price must be greater than 0"
             )
 
@@ -76,11 +78,11 @@ class Order:
     def validate_volume(volume: int) -> None:
         """Raise an error if the volume is invalid"""
         if volume <= 0:
-            raise ValueError(
+            raise OrderValueError(
                 f"Invalid order volume ${volume}. Volume must be greater than 0"
             )
         if not isinstance(volume, int):
-            raise ValueError(
+            raise OrderValueError(
                 f"Invalid order volume ${volume}. Volume must be an integer"
             )
         
@@ -107,4 +109,13 @@ class Order:
             return self.price > other.price
         else:
             return self.price < other.price 
-    
+
+class Quote():
+    def __init__(self, bid: Order, offer: Order):
+        if bid.order_side != OrderSide.BUY:
+            raise OrderValueError("Quote bid must be a buy side order")
+        if offer.order_side != OrderSide.SELL:
+            raise OrderValueError("Quote offer must be a sell side order")
+
+        self.bid = bid
+        self.offer = offer
