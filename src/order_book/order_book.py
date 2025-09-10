@@ -1,3 +1,4 @@
+from uuid import UUID
 from heapq import heapify, heappush
 from order_book.order import Order, OrderSide
 
@@ -30,7 +31,7 @@ class OrderBook:
             return self.best_offer()
     
 
-    def _get_order_idx(self, order_id: str, side: OrderSide) -> int | None:
+    def _get_order_idx(self, order_id: UUID, side: OrderSide) -> int:
         """
         Get the index of an order in the bid or offer heap in O(n) time
         searching from the start to end to the end of that heap
@@ -46,13 +47,16 @@ class OrderBook:
 
     def insert_resting_order(self, order: Order) -> None:
         """Insert an order into the order book in O(log(n)) time"""
+        if order.price is None:
+            raise ValueError("Cannot place a resting order with no price")
+        
         if order.order_side == OrderSide.BUY:
             heappush(self.bids, order)
         else:
             heappush(self.offers, order)
 
 
-    def cancel_order(self, order_id: str, side: OrderSide) -> None:
+    def cancel_order(self, order_id: UUID, side: OrderSide) -> None:
         """
         Cancel the top bid or offer in a given heap  
         """
@@ -64,7 +68,7 @@ class OrderBook:
             
     def amend_order(
             self,
-            order_id: str,
+            order_id: UUID,
             side: OrderSide,
             new_volume: int | None = None,
             new_price: float | None = None,
@@ -85,7 +89,7 @@ class OrderBook:
         if new_volume:
             relevant_heap[idx].volume = new_volume
         if new_price:
-            relevant_heap[idx].volume = new_volume
+            relevant_heap[idx].price = new_price
             heapify(relevant_heap)
 
 
