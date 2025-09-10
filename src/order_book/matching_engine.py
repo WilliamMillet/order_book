@@ -1,47 +1,73 @@
+from datetime import datetime
+from enum import Enum
 from order_book.order_book import OrderBook
-from order_book.order import Order, OrderType, Quote
+from order_book.order import Order, OrderType, OrderSide, Quote
 
+NO_MATCH = -1.0
+
+class OrderStatus(Enum):
+    REJECTED = -1
+    PARTIAL = 0
+    FILLED = 1
 
 class LiquidityError(Exception):
     pass
-
+    
+class MatchResult:
+    def __init__(self, order: Order):
+        """
+        Certain properties of match result can be set before the order
+        is completed using the original order
+        """
+        self.order_id = order.order_id
+        self.side = order.order_side
+        self.note = ""
+        self.filled_volume = 0
+        self.remaining_volume = order.volume
+        self.avg_match_price = NO_MATCH
+        self.timestamp = datetime.now()
+    
 
 class MatchingEngine:
     def __init__(self, book: OrderBook):
         self.book = book
 
-    def place_order(self, order: Order) -> None:
+    def place_order(self, order: Order) -> MatchResult:
         """Place an order in the order book"""
         match order.order_type:
             case OrderType.MARKET:
-                self._process_market_order(order)
+                return self._process_market_order(order)
             case OrderType.LIMIT:
-                self._process_limit_order(order)
+                return self._process_limit_order(order)
             case OrderType.FILL_OR_KILL:
-                self._process_FOK_order(order)
+                return self._process_FOK_order(order)
             case OrderType.IMMEDIATE_OR_CANCEL:
-                self._process_IOC_order(order)
+                return self._process_IOC_order(order)
 
     def place_quote(self, quote: Quote) -> None:
         self.place_order(quote.bid)
         self.place_order(quote.offer)
 
-
-    def _process_market_order(self, incoming: Order) -> None:
+    def _process_market_order(self, incoming: Order) -> MatchResult:
         """
         Immediately match an order to the best bid/offer available.
         If there are no orders to match with raise a liquidity
         error
         """
-        # print("Processing")
+        res = MatchResult(incoming)
+        trades = []
+
         while incoming.volume > 0:
-            # print(f"Current volume for {incoming.order_side} order: {incoming.volume}")
             best = self.book.best_order(incoming.order_side)
             if not best:
-                # print("A")
-                raise LiquidityError("No orders available to match with")
+                res.status = OrderStatus.REJECTED
+                res.note = "Insufficient liquidity to match order"
+                break
             else:
                 self._handle_mismatched_volumes(incoming, best)
+        
+        return res
+        
 
     def _process_limit_order(self, incoming: Order) -> None:
         """
@@ -115,5 +141,4 @@ class MatchingEngine:
         """
         for order in orders:
             self.book.insert_resting_order(order)
-                
-        
+    

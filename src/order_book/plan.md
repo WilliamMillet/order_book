@@ -1,4 +1,6 @@
-# Trader (dataclass)
+# This was the original strategy bt but the plans have changed a lot over time
+
+<!-- # Trader (dataclass)
 ## Properties
 - `name`: str
 - `id`: str (UUID)
@@ -36,9 +38,12 @@
 # Enums
 - **OrderSide** [BUY, SELL]
 - **OrderType** [MARKET, LIMIT_ORDER, FILL_OR_KILL, IMMEDIATE_OR_CANCEL, QUOTE]
+ -->
+
+To remember when I start working on this later
+- The current thing I'm working on is trying to get some sort of response after a trade. Right now you do not have info on the result of your trade. This should be fixed to give detailed info on each trade made, the price, the volume, the traders you traded with etc. We can use this for pandas analysis later
+- Do tests for fill or kill, immediate or cancel and quotes
 
 
-To do 
-- comment the basic business logic for each order type processor
 Possible resources
 - Technical notes on order books https://gist.github.com/halfelf/db1ae032dc34278968f8bf31ee999a25
