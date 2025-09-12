@@ -93,27 +93,30 @@ class OrderBook:
             relevant_heap[idx].price = new_price
             heapify(relevant_heap)
 
-    def partial_trade_top(
+    def trade_top(
             self,
             order: Order,
             volume_to_trade: int
         ) -> Trade:
         """
-        Accept part of the top bid or offer and return the return this trade
+        Accept part of all the whole top bid/offer and return the return the
+        trade conducted
         """
-        trade = Trade()
         
         best = self.best_order(order.inverse_side)
         if not best:
             raise OrderNotFoundError(f"No orders to trade with found")
 
-        self.amend_order(best.order_id, order.inverse_side, best.volume - volume_to_trade)
+        if best.volume == volume_to_trade:
+            self.cancel_order(best.order_id, best.order_side)
+        else:
+            self.amend_order(best.order_id, order.inverse_side, best.volume - volume_to_trade)
 
         if order.order_side == OrderSide.BUY:
             bidder, offerer = order.trader_id, best.trader_id
         else:
-            trade.offerer_id, trade.bidder_id = order.trader_id, best.trader_id
+            offerer, bidder = order.trader_id, best.trader_id
 
-        return Trade(volume=volume_to_trade, )
+        return Trade(offerer, bidder, best.price, volume_to_trade)
 
     

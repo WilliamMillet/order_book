@@ -1,7 +1,7 @@
 
-import uuid
+from uuid import uuid4
 
-class Trader():
+class Trader:
     def __init__(self, name: str) -> None:
-        self.id = uuid.uuid4
+        self.id = uuid4()
         self.name = name

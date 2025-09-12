@@ -1,14 +1,27 @@
 from datetime import datetime
 from enum import Enum
 from order_book.order_book import OrderBook
-from order_book.order import Order, OrderType, OrderSide, Quote
-
-NO_MATCH = -1.0
+from order_book.order import Order, OrderType, Quote
+from order_book.trade import Trade, TradeAnalytics
+from order_book.constants import NO_MATCH
 
 class OrderStatus(Enum):
-    REJECTED = -1
-    PARTIAL = 0
-    FILLED = 1
+    # Order status has not been decided yet
+    PENDING = "PENDING"
+    # All orders were rejected from the market for a reason such as a lack of
+    # liquidity
+    ALL_REJECTED = "ALL_REJECTED"
+    # No orders could not be immediately met and these are all no resting in
+    # the order book
+    ALL_RESTING = "ALL_RESTING"
+    # Some orders were rejected for a reason such as low liquidity and others
+    # were able to find matches
+    PARTIAL_REJECTION = "PARTIAL_REJECTION"
+    # Some orders where able to find matches and orders are not resting in
+    # the order book
+    PARTIAL_RESTING = "PARTIAL_RESTING"
+    # All orders found matches immediately
+    FILLED = "FILLED"
 
 class LiquidityError(Exception):
     pass
@@ -26,6 +39,8 @@ class MatchResult:
         self.remaining_volume = order.volume
         self.avg_match_price = NO_MATCH
         self.timestamp = datetime.now()
+        self.status = OrderStatus.PENDING
+        self.trades: list[Trade] = []
     
 
 class MatchingEngine:
@@ -39,10 +54,13 @@ class MatchingEngine:
                 return self._process_market_order(order)
             case OrderType.LIMIT:
                 return self._process_limit_order(order)
-            case OrderType.FILL_OR_KILL:
-                return self._process_FOK_order(order)
-            case OrderType.IMMEDIATE_OR_CANCEL:
-                return self._process_IOC_order(order)
+            # case OrderType.FILL_OR_KILL:
+            #     return self._process_FOK_order(order)
+            # case OrderType.IMMEDIATE_OR_CANCEL:
+            #     return self._process_IOC_order(order)
+        
+        # TEMP
+        return MatchResult(order)
 
     def place_quote(self, quote: Quote) -> None:
         self.place_order(quote.bid)
@@ -55,17 +73,31 @@ class MatchingEngine:
         error
         """
         res = MatchResult(incoming)
-        trades = []
+        trades: list[Trade] = []
 
         while incoming.volume > 0:
             best = self.book.best_order(incoming.order_side)
             if not best:
-                res.status = OrderStatus.REJECTED
-                res.note = "Insufficient liquidity to match order"
+                res.note = "Insufficient liquidity to match order fully"
                 break
             else:
-                self._handle_mismatched_volumes(incoming, best)
+                trade = self._handle_mismatched_volumes(incoming, best)
+                trades.append(trade)
         
+        if trades:
+            if incoming.volume == 0:
+                res.status = OrderStatus.FILLED
+            else:
+                res.status = OrderStatus.PARTIAL_REJECTION
+        else:
+            res.status = OrderStatus.ALL_REJECTED
+
+        res.filled_volume = res.remaining_volume - incoming.volume
+        res.remaining_volume = incoming.volume
+
+        res.avg_match_price = TradeAnalytics.avg_trade_price(trades)
+        res.trades.extend(trades)
+
         return res
         
 
@@ -113,7 +145,7 @@ class MatchingEngine:
             else:
                 self._handle_mismatched_volumes(incoming, best)
 
-    def _handle_mismatched_volumes(self, incoming: Order, best: Order) -> None:
+    def _handle_mismatched_volumes(self, incoming: Order, best: Order) -> Trade:
         """
         Resolve a partial match between the incoming order current best order.
 
@@ -122,16 +154,14 @@ class MatchingEngine:
         """
         if best.volume <= incoming.volume:
             incoming.volume -= best.volume
-            self.book.cancel_order(best.order_id, incoming.inverse_side)
+            trade = self.book.trade_top(best, best.volume)
         elif best.volume > incoming.volume:
-            new_best_volume = best.volume - incoming.volume
-            self.book.amend_order(
-                best.order_id,
-                incoming.inverse_side,
-                new_volume=new_best_volume
-            )
-            incoming.volume = 0
-
+            vol_to_trade = min(best.volume, incoming.volume)
+            trade = self.book.trade_top(best, vol_to_trade)
+            incoming.volume -= vol_to_trade
+        
+        return trade
+    
     def _insert_sorted_orders(self, orders: list[Order]) -> None:
         """
         Takes a list of orders sorted from lowest to highest priority and
