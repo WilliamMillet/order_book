@@ -26,6 +26,7 @@ def test_regular_mkt_order(mkt: Market):
 
     # In depth checks for MatchResult
     assert bid1_res.status == OrderStatus.FILLED
+    assert bid1_res.order_type == OrderType.MARKET
     assert bid1_res.order_id == bid1.order_id
     assert bid1_res.side == OrderSide.BUY
     assert bid1_res.note == ""

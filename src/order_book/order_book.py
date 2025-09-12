@@ -100,10 +100,12 @@ class OrderBook:
         ) -> Trade:
         """
         Accept part of all the whole top bid/offer and return the return the
-        trade conducted
+        trade conducted. If an offer is passed it is traded with the top bid.
+        If a bid is passed it is traded with the top offer.
         """
-        
-        best = self.best_order(order.inverse_side)
+        # Important: the order side isn't inverted here as we do a form
+        # of inversion for the best_offer
+        best = self.best_order(order.order_side)
         if not best:
             raise OrderNotFoundError(f"No orders to trade with found")
 

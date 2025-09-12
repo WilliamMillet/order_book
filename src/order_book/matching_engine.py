@@ -5,6 +5,7 @@ from order_book.order import Order, OrderType, Quote
 from order_book.trade import Trade, TradeAnalytics
 from order_book.constants import NO_MATCH
 
+
 class OrderStatus(Enum):
     # Order status has not been decided yet
     PENDING = "PENDING"
@@ -23,9 +24,11 @@ class OrderStatus(Enum):
     # All orders found matches immediately
     FILLED = "FILLED"
 
+
 class LiquidityError(Exception):
     pass
-    
+
+
 class MatchResult:
     def __init__(self, order: Order):
         """
@@ -34,6 +37,7 @@ class MatchResult:
         """
         self.order_id = order.order_id
         self.side = order.order_side
+        self.order_type = order.order_type
         self.note = ""
         self.filled_volume = 0
         self.remaining_volume = order.volume
@@ -41,7 +45,37 @@ class MatchResult:
         self.timestamp = datetime.now()
         self.status = OrderStatus.PENDING
         self.trades: list[Trade] = []
-    
+
+    def finalise(self, incoming: Order, trades: list[Trade]):
+        """Finalise the status of an order with order and trade information"""
+        self.status = MatchResult._order_status(incoming, trades)
+        self.filled_volume = self.remaining_volume - incoming.volume
+        self.remaining_volume = incoming.volume
+        self.avg_match_price = TradeAnalytics.avg_trade_price(trades)
+        self.trades.extend(trades)
+
+    @staticmethod
+    def _order_status(incoming: Order, trades: list[Trade]) -> OrderStatus:
+        """
+        Get the order status for a matching result from an incoming order and
+        list of trades conducting. This incoming order should have had its
+        volume reduced if applicable prior to this function call.
+        """
+        if incoming.volume == 0:
+            return OrderStatus.FILLED
+
+        # Only market orders have rejections and partial rejections
+        if incoming.order_type == OrderType.MARKET:
+            if trades:
+                return OrderStatus.PARTIAL_REJECTION
+            else:
+                return OrderStatus.ALL_REJECTED
+        else:
+            if trades:
+                return OrderStatus.PARTIAL_RESTING
+            else:
+                return OrderStatus.ALL_RESTING
+
 
 class MatchingEngine:
     def __init__(self, book: OrderBook):
@@ -58,7 +92,7 @@ class MatchingEngine:
             #     return self._process_FOK_order(order)
             # case OrderType.IMMEDIATE_OR_CANCEL:
             #     return self._process_IOC_order(order)
-        
+
         # TEMP
         return MatchResult(order)
 
@@ -83,29 +117,18 @@ class MatchingEngine:
             else:
                 trade = self._handle_mismatched_volumes(incoming, best)
                 trades.append(trade)
-        
-        if trades:
-            if incoming.volume == 0:
-                res.status = OrderStatus.FILLED
-            else:
-                res.status = OrderStatus.PARTIAL_REJECTION
-        else:
-            res.status = OrderStatus.ALL_REJECTED
 
-        res.filled_volume = res.remaining_volume - incoming.volume
-        res.remaining_volume = incoming.volume
-
-        res.avg_match_price = TradeAnalytics.avg_trade_price(trades)
-        res.trades.extend(trades)
-
+        res.finalise(incoming, trades)
         return res
-        
 
-    def _process_limit_order(self, incoming: Order) -> None:
+    def _process_limit_order(self, incoming: Order) -> MatchResult:
         """
         Continuously match with the best order that is within the limit. if no
         orders are available then place a resting order in the order book
         """
+        res = MatchResult(incoming)
+        trades: list[Trade] = []
+
         while incoming.volume > 0:
             best = self.book.best_order(incoming.order_side)
 
@@ -113,7 +136,11 @@ class MatchingEngine:
                 self.book.insert_resting_order(incoming)
                 break
             else:
-                self._handle_mismatched_volumes(incoming, best)
+                trade = self._handle_mismatched_volumes(incoming, best)
+                trades.append(trade)
+
+        res.finalise(incoming, trades)
+        return res
 
     def _process_FOK_order(self, incoming: Order) -> None:
         """
@@ -154,14 +181,14 @@ class MatchingEngine:
         """
         if best.volume <= incoming.volume:
             incoming.volume -= best.volume
-            trade = self.book.trade_top(best, best.volume)
+            trade = self.book.trade_top(incoming, best.volume)
         elif best.volume > incoming.volume:
             vol_to_trade = min(best.volume, incoming.volume)
-            trade = self.book.trade_top(best, vol_to_trade)
+            trade = self.book.trade_top(incoming, vol_to_trade)
             incoming.volume -= vol_to_trade
-        
+
         return trade
-    
+
     def _insert_sorted_orders(self, orders: list[Order]) -> None:
         """
         Takes a list of orders sorted from lowest to highest priority and
@@ -171,4 +198,3 @@ class MatchingEngine:
         """
         for order in orders:
             self.book.insert_resting_order(order)
-    

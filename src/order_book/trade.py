@@ -25,10 +25,8 @@ class TradeAnalytics:
         by volume
         """
 
-        
         total_volume = sum(t.volume for t in trades)
         total_cost = sum(t.price * t.volume for t in trades)
-        print(f"Total volume: <{total_volume}>, Total cost: <{total_cost}>")
 
         return total_cost / total_volume if total_volume != 0 else NO_MATCH
         
