@@ -6,6 +6,7 @@ simple type of order which allows for efficient testing.
 
 from order_book.types import Market
 from order_book.order import Order, OrderSide, OrderType
+from order_book.matching_engine import OrderStatus
 from order_book.constants import NO_MATCH
 
 def test_simple_limit_order_pair(mkt: Market):
@@ -31,6 +32,7 @@ def test_simple_limit_order_pair(mkt: Market):
     assert offer1_res.order_type == OrderType.LIMIT
     assert offer1_res.note == ""
     assert offer1_res.side == OrderSide.SELL
+    assert offer1_res.status == OrderStatus.FILLED
     assert offer1_res.filled_volume == 100
     assert offer1_res.remaining_volume == 0
     assert offer1_res.avg_match_price == 10.00
@@ -86,40 +88,40 @@ def test_match_volume_gt_order(mkt: Market):
     assert best_offer is not None and best_offer.volume == 25
     assert book.best_bid() is None 
 
-# def test_match_volume_lt_total_volume(mkt: Market):
-#     """
-#     Test the result of an incoming order having a higher volume than the order
-#     it matches with (when there is only one order to match with)
-#     """
-#     book, eng, traders = mkt.book, mkt.eng, mkt.traders
-#     john, jane = traders[0:2]
+def test_match_volume_lt_total_volume(mkt: Market):
+    """
+    Test the result of an incoming order having a higher volume than the order
+    it matches with (when there is only one order to match with)
+    """
+    book, eng, traders = mkt.book, mkt.eng, mkt.traders
+    john, jane = traders[0:2]
 
-#     offer = Order(OrderSide.SELL, OrderType.LIMIT, john, 50, 10)
-#     eng.place_order(offer)
+    offer = Order(OrderSide.SELL, OrderType.LIMIT, john, 50, 10)
+    eng.place_order(offer)
 
-#     bid = Order(OrderSide.BUY, OrderType.LIMIT, jane, 75, 10)
-#     eng.place_order(bid)
+    bid = Order(OrderSide.BUY, OrderType.LIMIT, jane, 75, 10)
+    eng.place_order(bid)
 
-#     assert book.best_offer() is None
-#     best_bid = book.best_bid()
-#     assert best_bid is not None and best_bid.volume == 25
+    assert book.best_offer() is None
+    best_bid = book.best_bid()
+    assert best_bid is not None and best_bid.volume == 25
 
-# def test_match_volume_lt_order(mkt: Market):
-#     """
-#     Test the result of an incoming order having a higher volume than the order
-#     it matches with, but not the total volume of orders that can be matched with
-#     """
-#     book, eng, traders = mkt.book, mkt.eng, mkt.traders
-#     john, jane, jack = traders[0:3]
+def test_match_volume_lt_order(mkt: Market):
+    """
+    Test the result of an incoming order having a higher volume than the order
+    it matches with, but not the total volume of orders that can be matched with
+    """
+    book, eng, traders = mkt.book, mkt.eng, mkt.traders
+    john, jane, jack = traders[0:3]
 
-#     offer1 = Order(OrderSide.SELL, OrderType.LIMIT, john, 50, 10)
-#     offer2 = Order(OrderSide.SELL, OrderType.LIMIT, jane, 50, 10)
-#     eng.place_order(offer1)
-#     eng.place_order(offer2)
+    offer1 = Order(OrderSide.SELL, OrderType.LIMIT, john, 50, 10)
+    offer2 = Order(OrderSide.SELL, OrderType.LIMIT, jane, 50, 10)
+    eng.place_order(offer1)
+    eng.place_order(offer2)
 
-#     bid = Order(OrderSide.BUY, OrderType.LIMIT, jack, 70, 10)
-#     eng.place_order(bid)
+    bid = Order(OrderSide.BUY, OrderType.LIMIT, jack, 70, 10)
+    eng.place_order(bid)
 
-#     best_offer = book.best_offer()
-#     assert best_offer is not None and best_offer.volume == 30
-#     assert book.best_bid() is None
+    best_offer = book.best_offer()
+    assert best_offer is not None and best_offer.volume == 30
+    assert book.best_bid() is None

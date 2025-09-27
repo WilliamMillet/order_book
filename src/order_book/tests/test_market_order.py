@@ -7,6 +7,7 @@ from order_book.order import Order, OrderSide, OrderType
 from order_book.matching_engine import OrderStatus
 from order_book.constants import NO_MATCH
 
+
 def test_regular_mkt_order(mkt: Market):
     """
     Test a bid and order of the same quantity and price match correctly
@@ -14,7 +15,7 @@ def test_regular_mkt_order(mkt: Market):
     book, eng, traders = mkt.book, mkt.eng, mkt.traders
     john, jane = traders[0:2]
 
-    offer1 = Order( OrderSide.SELL, OrderType.LIMIT, john, 150, 10.00)
+    offer1 = Order(OrderSide.SELL, OrderType.LIMIT, john, 150, 10.00)
     eng.place_order(offer1)
 
     bid1 = Order(OrderSide.BUY, OrderType.MARKET, jane, 150)
@@ -24,7 +25,7 @@ def test_regular_mkt_order(mkt: Market):
     assert book.best_offer() is None
     assert book.best_bid() is None
 
-    # In depth checks for MatchResult
+    # In depth checks for first bid MatchResult
     assert bid1_res.status == OrderStatus.FILLED
     assert bid1_res.order_type == OrderType.MARKET
     assert bid1_res.order_id == bid1.order_id
@@ -34,7 +35,18 @@ def test_regular_mkt_order(mkt: Market):
     assert bid1_res.remaining_volume == 0
     assert bid1_res.avg_match_price == 10.00
     assert isinstance(bid1_res.timestamp, datetime)
+
     assert len(bid1_res.trades) == 1
+    trade = bid1_res.trades[0]
+    assert trade.price == 10.00
+    assert trade.volume == 150
+    assert trade.bidder_id == jane.id
+    assert trade.offerer_id == john.id
+
+
+def test_mkt_order_offer(mkt: Market):
+    book, eng, traders = mkt.book, mkt.eng, mkt.traders
+    john, jane = traders[0:2]
 
     # Check the inverse way (Order made before bid)
     offer2 = Order(OrderSide.BUY, OrderType.LIMIT, john, 75)
@@ -49,6 +61,7 @@ def test_regular_mkt_order(mkt: Market):
     assert book.best_offer() is None
     assert book.best_bid() is None
 
+
 def test_mkt_order_when_low_liquidity(mkt: Market):
     """
     Check that a market order does not go through when their are no other
@@ -56,8 +69,8 @@ def test_mkt_order_when_low_liquidity(mkt: Market):
     """
     book, eng, traders = mkt.book, mkt.eng, mkt.traders
     john = traders[0]
+
     # Purposely do NOT add any limit orders to the book
-    
     bid1 = Order(OrderSide.BUY, OrderType.MARKET, john, 150)
     bid1_res = eng.place_order(bid1)
 
@@ -72,6 +85,7 @@ def test_mkt_order_when_low_liquidity(mkt: Market):
     assert len(bid1_res.trades) == 0
 
     assert book.best_bid() is None
+
 
 def test_mkt_order_partial_fill(mkt: Market):
     """
@@ -90,7 +104,7 @@ def test_mkt_order_partial_fill(mkt: Market):
 
     bid1 = Order(OrderSide.BUY, OrderType.MARKET, jane, 120)
     bid1_res = eng.place_order(bid1)
-    
+
     assert bid1_res.status == OrderStatus.PARTIAL_REJECTION
     assert bid1_res.note == "Insufficient liquidity to match order fully"
     assert bid1_res.filled_volume == 100
@@ -119,7 +133,27 @@ def test_extreme_price_difference_allowed(mkt: Market):
     assert book.best_bid() is None
 
 
+def test_time_is_used_as_tie_breaker(mkt: Market):
+    """
+    If there are several orders of the same price, time should be used as a
+    tie breaker
+    """
+    book, eng, traders = mkt.book, mkt.eng, mkt.traders
+    john, jane, jack = traders[0:3]
+    
+    # Offer prices need to be equal to test this
+    first_offer = Order(OrderSide.SELL, OrderType.LIMIT, jack, 150, 10.00)
+    eng.place_order(first_offer)
+    eng.place_orders([
+        Order(OrderSide.SELL, OrderType.LIMIT, john, 150, 10.00)
+        for _ in range(10)
+    ])
+    
+    bid = Order(OrderSide.BUY, OrderType.MARKET, jane, 150)
+    bid_res = eng.place_order(bid)
 
-
-
-# Test best order is chosen (for BUY and SELL), check time is used as tie breaker
+    assert book.best_bid() is None
+    
+    assert len(bid_res.trades) == 1
+    trade = bid_res.trades[0]
+    assert trade.offerer_id == jack.id

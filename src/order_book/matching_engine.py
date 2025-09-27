@@ -4,6 +4,7 @@ from order_book.order_book import OrderBook
 from order_book.order import Order, OrderType, Quote
 from order_book.trade import Trade, TradeAnalytics
 from order_book.constants import NO_MATCH
+from typing import Iterable
 
 
 class OrderStatus(Enum):
@@ -95,6 +96,9 @@ class MatchingEngine:
 
         # TEMP
         return MatchResult(order)
+
+    def place_orders(self, orders: Iterable[Order]) -> list[MatchResult]:
+        return [self.place_order(o) for o in orders]
 
     def place_quote(self, quote: Quote) -> None:
         self.place_order(quote.bid)
