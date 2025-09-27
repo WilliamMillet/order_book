@@ -22,8 +22,8 @@ def test_regular_mkt_order(mkt: Market):
     bid1_res = eng.place_order(bid1)
 
     # Since bid and offer match they should no longer be on the order book
-    assert book.best_offer() is None
-    assert book.best_bid() is None
+    assert book.is_empty()
+
 
     # In depth checks for first bid MatchResult
     assert bid1_res.status == OrderStatus.FILLED
@@ -58,8 +58,7 @@ def test_mkt_order_offer(mkt: Market):
 
     assert bid2_res.side == OrderSide.SELL
 
-    assert book.best_offer() is None
-    assert book.best_bid() is None
+    assert book.is_empty()
 
 
 def test_mkt_order_when_low_liquidity(mkt: Market):
@@ -129,8 +128,7 @@ def test_extreme_price_difference_allowed(mkt: Market):
     bid1 = Order(OrderSide.BUY, OrderType.MARKET, jane, 150)
     eng.place_order(bid1)
 
-    assert book.best_offer() is None
-    assert book.best_bid() is None
+    assert book.is_empty()
 
 
 def test_time_is_used_as_tie_breaker(mkt: Market):

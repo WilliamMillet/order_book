@@ -25,8 +25,7 @@ def test_simple_limit_order_pair(mkt: Market):
     offer1 = Order(OrderSide.SELL, OrderType.LIMIT, jane, 100, 10.00)
     offer1_res = eng.place_order(offer1)
     
-    assert book.best_bid() is None
-    assert book.best_offer() is None
+    assert book.is_empty()
 
     assert offer1_res.order_id == offer1.order_id
     assert offer1_res.order_type == OrderType.LIMIT

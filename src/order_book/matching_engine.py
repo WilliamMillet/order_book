@@ -66,17 +66,31 @@ class MatchResult:
             return OrderStatus.FILLED
 
         # Only market orders have rejections and partial rejections
-        if incoming.order_type == OrderType.MARKET:
-            if trades:
-                return OrderStatus.PARTIAL_REJECTION
-            else:
+        match incoming.order_type:
+            case OrderType.MARKET:
+                if trades:
+                    return OrderStatus.PARTIAL_REJECTION
+                else:
+                    return OrderStatus.ALL_REJECTED
+            case OrderType.FILL_OR_KILL:
                 return OrderStatus.ALL_REJECTED
-        else:
-            if trades:
-                return OrderStatus.PARTIAL_RESTING
-            else:
-                return OrderStatus.ALL_RESTING
+            case _:
+                if trades:
+                    return OrderStatus.PARTIAL_RESTING
+                else:
+                    return OrderStatus.ALL_RESTING
 
+    def __str__(self) -> str:
+        key_val_pairs = (
+            ("Side", self.side),
+            ("Type", self.order_type),
+            ("Filled Volume", self.filled_volume),
+            ("Remaining Volume", self.remaining_volume),
+            ("Average Match Price", self.avg_match_price),
+            ("Status", self.status),
+        )
+        formatted_pairs = ", ".join(f"{k}: {v}" for k, v in key_val_pairs)
+        return f"MatchResult({formatted_pairs})"
 
 class MatchingEngine:
     def __init__(self, book: OrderBook):
@@ -89,8 +103,8 @@ class MatchingEngine:
                 return self._process_market_order(order)
             case OrderType.LIMIT:
                 return self._process_limit_order(order)
-            # case OrderType.FILL_OR_KILL:
-            #     return self._process_FOK_order(order)
+            case OrderType.FILL_OR_KILL:
+                return self._process_FOK_order(order)
             # case OrderType.IMMEDIATE_OR_CANCEL:
             #     return self._process_IOC_order(order)
 
@@ -146,23 +160,35 @@ class MatchingEngine:
         res.finalise(incoming, trades)
         return res
 
-    def _process_FOK_order(self, incoming: Order) -> None:
+    def _process_FOK_order(self, incoming: Order) -> MatchResult:
         """
         Fill or kill order (A limit order that is cancelled if it can't be
         immediately met. O(k*log(n)) time complexity where k is the number
         of orders that the incoming order must be matched with.
         """
+        res = MatchResult(incoming)
         # Strategy - Extract matched orders until the incoming order is
         # filled. If it can't be filled than we can reinsert these.
-        pending_matches: list[Order] = []
+        pending_orders_matched: list[Order] = []
+        pending_trades: list[Trade] = []
+        initial_volume = incoming.volume
 
         while incoming.volume > 0:
             best = self.book.best_order(incoming.order_side)
             if not best or not incoming.is_price_in_limit(best.price):
                 # 'Kill (reinsert pending)'
-                self._insert_sorted_orders(pending_matches)
+                res.note = "Insufficient liquidity to match order fully"
+                self.insert_orders(pending_orders_matched)
+                pending_trades.clear()
+                incoming.volume = initial_volume
+                break
             else:
-                self._handle_mismatched_volumes(incoming, best)
+                trade = self._handle_mismatched_volumes(incoming, best)
+                pending_trades.append(trade)
+                pending_orders_matched.append(best)
+        
+        res.finalise(incoming, pending_trades)
+        return res
 
     def _process_IOC_order(self, incoming: Order) -> None:
         """
@@ -193,12 +219,15 @@ class MatchingEngine:
 
         return trade
 
-    def _insert_sorted_orders(self, orders: list[Order]) -> None:
+    def insert_orders(self, orders: list[Order]) -> None:
         """
         Takes a list of orders sorted from lowest to highest priority and
         inserts them back in the order book. Note that I tested this in
         reverse and normal sorted order. Iterating in reverse seems to have
-        no effect or a negative effect.
+        no effect or a negative effect on time efficiency. Also, inserting
+        into the order book is a distinct action from making a trade, as we
+        don't check if there is an order to match with. It is assumed this
+        has been done already.
         """
-        for order in orders:
-            self.book.insert_resting_order(order)
+        for o in orders:
+            self.book.insert_resting_order(o)
