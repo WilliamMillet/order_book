@@ -9,7 +9,8 @@ from order_book.constants import NO_MATCH
 
 def test_successful_fok(mkt: Market):
     """
-    Test that a FOK where all volume is met immediately
+    Test an FOK order where all volume is met immediately returns the correct
+    order and affects the order book correctly.
     """
     book, eng, traders = mkt.book, mkt.eng, mkt.traders
     john, jane = traders[0:2]
@@ -46,10 +47,7 @@ def test_failed_fok(mkt: Market):
     offer1 = Order(OrderSide.SELL, OrderType.LIMIT, john, 60, 8.00)
     offer2 = Order(OrderSide.SELL, OrderType.LIMIT, john, 40, 10.00) 
     eng.place_orders([offer1, offer2])
-    
-    print(book.offers[0].price)    
-    print(book.offers[1].price)    
-    
+
     bid = Order(OrderSide.BUY, OrderType.FILL_OR_KILL, jane, 80, 9.00)
     bid_res = eng.place_order(bid)
 

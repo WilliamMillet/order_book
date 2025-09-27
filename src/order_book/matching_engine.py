@@ -67,7 +67,7 @@ class MatchResult:
 
         # Only market orders have rejections and partial rejections
         match incoming.order_type:
-            case OrderType.MARKET:
+            case OrderType.MARKET | OrderType.IMMEDIATE_OR_CANCEL:
                 if trades:
                     return OrderStatus.PARTIAL_REJECTION
                 else:
@@ -105,13 +105,14 @@ class MatchingEngine:
                 return self._process_limit_order(order)
             case OrderType.FILL_OR_KILL:
                 return self._process_FOK_order(order)
-            # case OrderType.IMMEDIATE_OR_CANCEL:
-            #     return self._process_IOC_order(order)
-
-        # TEMP
-        return MatchResult(order)
+            case OrderType.IMMEDIATE_OR_CANCEL:
+                return self._process_IOC_order(order)
 
     def place_orders(self, orders: Iterable[Order]) -> list[MatchResult]:
+        """
+        Place multiple orders in the order book from an iterable. Insertion
+        occurs in the same order as the iterable is ordered.
+        """
         return [self.place_order(o) for o in orders]
 
     def place_quote(self, quote: Quote) -> None:
@@ -190,17 +191,24 @@ class MatchingEngine:
         res.finalise(incoming, pending_trades)
         return res
 
-    def _process_IOC_order(self, incoming: Order) -> None:
+    def _process_IOC_order(self, incoming: Order) -> MatchResult:
         """
         Process an immediate or cancel (IOC) order. Similar to a FOK order
         but will fulfil some of the order if possible
         """
+        res = MatchResult(incoming)
+        trades: list[Trade] = []
+        
         while incoming.volume > 0:
             best = self.book.best_order(incoming.order_side)
             if not best or not incoming.is_price_in_limit(best.price):
                 break
             else:
-                self._handle_mismatched_volumes(incoming, best)
+                trade = self._handle_mismatched_volumes(incoming, best)
+                trades.append(trade)
+
+        res.finalise(incoming, trades)
+        return res
 
     def _handle_mismatched_volumes(self, incoming: Order, best: Order) -> Trade:
         """
