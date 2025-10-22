@@ -8,7 +8,7 @@ import market.Trader;
 /**
  * An order to buy or sell on the market
  */
-public abstract sealed class Order permits MarketOrder, LimitOrder, FOCOrder, IOCOrder {
+public abstract sealed class Order permits MarketOrder, LimitOrder, FOKOrder, IOCOrder {
     private final UUID orderId;
     private final UUID traderId;
     private final OrderSide side;
@@ -36,6 +36,26 @@ public abstract sealed class Order permits MarketOrder, LimitOrder, FOCOrder, IO
         } else {
             return OrderSide.BUY;
         }
+    }
+
+    public UUID getOrderId() {
+        return orderId;
+    }
+
+    public UUID getTraderId() {
+        return traderId;
+    }
+
+    public OrderSide getSide() {
+        return side;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public int getVolume() {
+        return volume;
     }
 
     /**

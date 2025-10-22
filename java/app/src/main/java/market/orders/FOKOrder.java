@@ -4,18 +4,18 @@ import market.Trader;
 import market.orders.strategies.PriceAcceptanceStrategy;
 import market.orders.strategies.LimitedOrderPriceAcceptanceStrategy;
 
-public final class FOCOrder extends Order {
+public final class FOKOrder extends Order {
     private double price;
     private final PriceAcceptanceStrategy paStrategy;
 
-    public FOCOrder(OrderSide side, Trader trader, int volume, double price) {
+    public FOKOrder(OrderSide side, Trader trader, int volume, double price) {
         super(side, trader, volume);
 
         OrderValidator.validatePrice(price);
         this.price = price;
         paStrategy = new LimitedOrderPriceAcceptanceStrategy(price, side);
     }
-    
+
     @Override
     public boolean isInPriceLimit(double price) {
         return paStrategy.acceptsPrice(price);
