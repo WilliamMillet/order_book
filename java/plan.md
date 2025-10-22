@@ -11,7 +11,7 @@ Properties
 - orderId: : UUID
 Methods
 + canRestInBook(): boolean [abstract]
-+ isPriceInLimit(): boolean [abstract]
++ isPriceInLimit(Order): boolean [abstract]
 + inverseSide(): OrderSide
 
 # public final MarketOrder extends Order
