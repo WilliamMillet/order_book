@@ -2,13 +2,11 @@ package market.matching;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import market.Trade;
 import market.orders.FOKOrder;
 import market.orders.MarketOrder;
 import market.orders.Order;
-import market.orders.OrderSide;
 
 public class MatchResultBuilder {
     private final MatchResult res;
@@ -27,6 +25,7 @@ public class MatchResultBuilder {
         res.setRemainingVolume(order.getVolume());
         res.setAvgMatchPrice(MatchResult.getNoMatches());
         res.setTimestamp(LocalDateTime.now());
+        res.setNote("");
 
         this.res = res;
     }
@@ -41,6 +40,7 @@ public class MatchResultBuilder {
         res.setFilledVolume(res.getRemainingVolume() - incoming.getVolume());
         res.setRemainingVolume(incoming.getVolume());
         res.setAvgMatchPrice(getAverageTradePrice(trades));
+        res.setTrades(trades);
         
         isBuilt = true;
     }

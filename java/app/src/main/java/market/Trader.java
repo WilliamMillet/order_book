@@ -1,5 +1,6 @@
 package market;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class Trader {
@@ -18,4 +19,23 @@ public class Trader {
     public UUID getId() {
         return id;
     }
-}
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        
+        if (other == null || !Trader.class.isInstance(other)) {
+            return false;
+        }
+
+        Trader otherTrader = (Trader) other;
+        return (name.equals(otherTrader.getName()) && id.equals(otherTrader.getId()));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, id);
+    }
+ }

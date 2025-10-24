@@ -59,8 +59,6 @@ public abstract sealed class Order permits MarketOrder, PricedOrder {
     }
 
     public void setVolume(int volume) {
-        OrderValidator.validateVolume(volume);
-        
         this.volume = volume;
     }
 

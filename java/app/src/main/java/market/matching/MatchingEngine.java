@@ -47,7 +47,7 @@ public class MatchingEngine {
      * @return a list of the immediate results of the matching process
      */
     public List<MatchResult> placeOrders(List<Order> orders) {
-        return orders.stream().map(o -> placeOrder(o)).toList();
+        return new ArrayList<>(orders.stream().map(o -> placeOrder(o)).toList());
         
     }
 
@@ -75,13 +75,19 @@ public class MatchingEngine {
         return matchResBuilder.getResult();
     }
 
+    /**
+     * Continuously match with the best order that is within the limit. if no orders are available then place a resting order in
+     * the order book
+     * @param incoming the order to process
+     * @return the immediate match result
+     */
     public MatchResult processLimitOrder(LimitOrder incoming) {
         MatchResultBuilder matchResBuilder = new MatchResultBuilder(incoming);
         List<Trade> trades = new ArrayList<>();
 
         while (incoming.getVolume() > 0) {
             PricedOrder best = book.getBestOrder(incoming.getSide());
-            if (best == null || incoming.isInPriceLimit(best.getPrice())) {
+            if (best == null || !incoming.isInPriceLimit(best.getPrice())) {
                 book.insertRestingOrder(incoming);
                 break;
             } else {
@@ -94,11 +100,60 @@ public class MatchingEngine {
         return matchResBuilder.getResult();
     }
 
+    /**
+     * Fill or kill order (A limit order that is cancelled if it can't be immediately met. O(k*log(n)) time complexity where
+     * k is the number of orders that the incoming order must be matched with
+     * @param incoming the order to process
+     * @return the immediate match result
+     */
     public MatchResult processFOKOrder(FOKOrder incoming) {
-            MatchResultBuilder matchResBuilder = new MatchResultBuilder(incoming);
-        List<Trade> trades = new ArrayList<>();
+        MatchResultBuilder matchResBuilder = new MatchResultBuilder(incoming);
+        List<PricedOrder> pendingOrdersMatched = new ArrayList<>();
+        List<Trade> pendingTrades = new ArrayList<>();
+
+        while (incoming.getVolume() > 0) {
+            PricedOrder best = book.getBestOrder(incoming.getSide());
+
+            if (best == null || !incoming.isInPriceLimit(best.getPrice())) {
+                // 'Kill' step
+                matchResBuilder.attachNote("Insufficient liquidity to match order fully");
+                insertOrders(pendingOrdersMatched);
+                pendingTrades.clear();
+                break;
+            } else {
+                Trade trade = handleMismatchedVolumes(incoming, best);
+                pendingTrades.add(trade);
+                pendingOrdersMatched.add(best);
+            }
+        }
+
+        matchResBuilder.finalise(incoming, pendingTrades);
+        return matchResBuilder.getResult();
+
     }
-    public MatchResult processIOCOrder(IOCOrder incoming) { return null; }
+
+    /**
+     * Process an immediate or cancel (IOC) order. Similar to a FOK order but will fulfil some of the order if possible
+     * @param incoming the order to process
+     * @return the immediate match result
+     */
+    public MatchResult processIOCOrder(IOCOrder incoming) { 
+        MatchResultBuilder matchResBuilder = new MatchResultBuilder(incoming);
+        List<Trade> trades = new ArrayList<>();
+
+        while (incoming.getVolume() > 0) {
+            PricedOrder best = book.getBestOrder(incoming.getSide());
+            if (best == null || !incoming.isInPriceLimit(best.getPrice())) {
+                break;
+            } else {
+                Trade trade = handleMismatchedVolumes(incoming, best);
+                trades.add(trade);
+            }
+        }
+
+        matchResBuilder.finalise(incoming, trades);
+        return matchResBuilder.getResult();
+    }
 
     /**
      * Resolve a partial match between the incoming order current best order.

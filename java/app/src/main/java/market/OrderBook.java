@@ -43,8 +43,8 @@ public class OrderBook {
      */
     public PricedOrder getBestOrder(OrderSide side) {
         return switch (side) {
-            case BUY -> getBestBid();
-            case SELL -> getBestOffer();
+            case BUY -> getBestOffer();
+            case SELL -> getBestBid();
             default -> throw new IllegalArgumentException("Order side '" + side.toString() + "' is not known");
         };
     }
