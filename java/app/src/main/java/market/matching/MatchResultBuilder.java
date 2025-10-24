@@ -46,6 +46,14 @@ public class MatchResultBuilder {
     }
 
     /**
+     * Attach a note to the match result
+     * @param note the string note to add
+     */
+    public void attachNote(String note) {
+        res.setNote(note);
+    }
+
+    /**
      * Get the complete match result
      * @return the constructed MatchResult object
      */

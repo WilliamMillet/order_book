@@ -36,6 +36,9 @@ public class MatchResult {
     }
 
     public void setNote(String note) {
+        if (note.length() > 250) {
+            throw new IllegalArgumentException("Match result note cannot be greater then 250 characters");
+        }
         this.note = note;
     }
 
@@ -63,7 +66,6 @@ public class MatchResult {
         this.trades = (trades == null) ? new ArrayList<>() : new ArrayList<>(trades);
     }
 
-    // Getters
     public UUID getOrderId() {
         return orderId;
     }

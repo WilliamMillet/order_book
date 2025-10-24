@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.UUID;
 
+import market.orders.Order;
 import market.orders.OrderSide;
 import market.orders.OrderValidator;
 import market.orders.PricedOrder;
@@ -94,7 +95,7 @@ public class OrderBook {
         return false;
     }
     
-    public Trade tradeTop(PricedOrder order, int volumeToTrade) {
+    public Trade tradeTop(Order order, int volumeToTrade) {
         PricedOrder best = getBestOrder(order.getSide());
         if (best == null) {
             throw new OrderNotFoundException("No orders to trade with found");
