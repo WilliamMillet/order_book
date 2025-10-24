@@ -2,6 +2,8 @@
 Observer pattern to notify traders of the status of their orders, e.g. when someone matches with them
 Factory pattern to create orders based on stuff like JSON input or CSV input. Could do something with insertion
 
+Saving stuff to a CSV file for later analysis
+
 # enum OrderSide
 - BUY
 - SELL

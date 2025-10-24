@@ -172,7 +172,7 @@ public class MatchingEngine {
             
         } else {
             int volToTrade = Math.min(best.getVolume(), incoming.getVolume());
-            trade = book.tradeTop(null, volToTrade);
+            trade = book.tradeTop(incoming, volToTrade);
             int newVol = incoming.getVolume() - volToTrade;
             
             incoming.setVolume(newVol);
