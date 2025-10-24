@@ -58,6 +58,12 @@ public abstract sealed class Order permits MarketOrder, PricedOrder {
         return volume;
     }
 
+    public void setVolume(int volume) {
+        OrderValidator.validateVolume(volume);
+        
+        this.volume = volume;
+    }
+
     /**
      * Determine if an order can rest in the order book
      * @return true if the order can rest in the order book, false otherwise
