@@ -8,7 +8,7 @@ import market.Trader;
 /**
  * An order to buy or sell on the market
  */
-public abstract sealed class Order permits MarketOrder, LimitOrder, FOKOrder, IOCOrder {
+public abstract sealed class Order permits MarketOrder, PricedOrder {
     private final UUID orderId;
     private final UUID traderId;
     private final OrderSide side;

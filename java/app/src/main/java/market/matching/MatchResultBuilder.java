@@ -12,6 +12,7 @@ import market.orders.OrderSide;
 
 public class MatchResultBuilder {
     private final MatchResult res;
+    private boolean isBuilt = false;
 
     /**
      * Start building a match result with information we can determine before matching is performed
@@ -39,9 +40,22 @@ public class MatchResultBuilder {
         res.setStatus(getOrderStatus(incoming, trades));
         res.setFilledVolume(res.getRemainingVolume() - incoming.getVolume());
         res.setRemainingVolume(incoming.getVolume());
-        res.setAvgMatchPrice(0);
+        res.setAvgMatchPrice(getAverageTradePrice(trades));
+        
+        isBuilt = true;
     }
 
+    /**
+     * Get the complete match result
+     * @return the constructed MatchResult object
+     */
+    public MatchResult getResult() {
+        if (!isBuilt) {
+            throw new IllegalStateException("Cannot get match result before finalising the result");
+        }
+
+        return res;
+    }
     /**
      * Determine the status of an order from an order's type, volume and the list of trades.
      * @param incoming the order attempting to enter the order book

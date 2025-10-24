@@ -4,10 +4,18 @@
 package org.example;
 
 import org.junit.jupiter.api.Test;
+
+import market.OrderBook;
 import market.orders.Order;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppTest {
+    @Test
+    public void test() {
+        OrderBook book = new OrderBook();
+        
+    }
 
+    
 }
