@@ -4,6 +4,8 @@ Factory pattern to create orders based on stuff like JSON input or CSV input. Co
 
 Saving stuff to a CSV file for later analysis
 
+Probably put some HTTP wrapper on top of this for now and make a short demo. I want to replace this with a better project in the holidays anyway
+
 # enum OrderSide
 - BUY
 - SELL
@@ -152,7 +154,53 @@ Properties
 - price: float
 - volume: int
 
+# New changes ----------------------------------------------------------------------------------------------------------
+
 # public record Trader
 Properties
 - id: UUID
-- name: UUIDs  
+- name: UUIDs 
+- portfolio Portfolio
+Methods
++ Trader(String, MatchingEngine)
+
+# OrderChangeSubscriber
+Methods
++ listenToOrderChange(OrderChangeDTO): void
+
+# OrderChangeSubject
+Methods
++ addSubscriber(OrderChangeSubject): void
++ removeSubscriber(OrderChangeSubject): void
++ notifySubscribers(): void
+
+# MatchSubscriber
+Methods
++ listenToMatch(MatchResult): void
+
+# MatchSubject
+Methods
++ addSubscriber(MatchSubject): void
++ removeSubscriber(MatchSubject): void
++ notifySubscribers(): void
+
+# OrderSummary {record}
+- ID: UUID
+- volume: int
+- price: double
+- timestamp: LocalDateTime
+- side: OrderSide
+
+# TraderFactory
+Properties
+- eng: MatchingEngine
+Methods
++ createTrader(String): Trader (Create a trader with the matching engine attached) 
+
+# Portfolio implements MatchSubscriber, OrderChangeSubscriber
+Properties
+- activeOrders: List<OrderSummary> 
+- tradeHistory: List<Trade> 
+- pnl: double = 0
+Methods
++ Portfolio(): Attach self to the matching engine

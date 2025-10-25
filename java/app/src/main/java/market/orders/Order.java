@@ -1,9 +1,11 @@
 package market.orders;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
-import market.Trader;
+import market.trader.Trader;
 
 /**
  * An order to buy or sell on the market
@@ -14,7 +16,6 @@ public abstract sealed class Order permits MarketOrder, PricedOrder {
     private final OrderSide side;
     private final LocalDateTime timestamp; 
     private int volume;
-
 
     public Order(OrderSide side, Trader trader, int volume) {
         OrderValidator.validateVolume(volume);

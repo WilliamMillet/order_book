@@ -107,22 +107,22 @@ public class OrderBook {
             amendOrderVolume(best.getOrderId(), order.getInverseSide(), best.getVolume() - volumeToTrade);
         }
 
-        UUID bidderId;
-        UUID offererId;
+        UUID bidId;
+        UUID offerId;
         switch (order.getSide()) {
             case BUY:
-                bidderId = order.getOrderId();
-                offererId = best.getOrderId();
+                bidId = order.getOrderId();
+                offerId = best.getOrderId();
                 break;
             case SELL:
-                offererId = order.getOrderId();
-                bidderId = order.getOrderId();
+                offerId = order.getOrderId();
+                bidId = order.getOrderId();
                 break;
             default:
                 throw new IllegalArgumentException("Order side '" + order.getSide().toString() + "' is not known");
         }
 
-        return new Trade(offererId, bidderId, best.getPrice(), volumeToTrade);
+        return new Trade(offerId, bidId, best.getPrice(), volumeToTrade);
     }
 
     /**
@@ -137,13 +137,4 @@ public class OrderBook {
             default -> throw new IllegalArgumentException("Order side '" + side.toString() + "' is not known");
         };
     }
-
-
-
-
-    
-
-    
-
-
 }

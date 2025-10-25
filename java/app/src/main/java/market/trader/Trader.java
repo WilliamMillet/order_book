@@ -1,4 +1,4 @@
-package market;
+package market.trader;
 
 import java.util.Objects;
 import java.util.UUID;

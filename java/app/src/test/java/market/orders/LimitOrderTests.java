@@ -1,17 +1,15 @@
-package market;
+package market.orders;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 
+import market.OrderBook;
 import market.matching.MatchResult;
 import market.matching.MatchingEngine;
 import market.matching.OrderStatus;
-import market.orders.LimitOrder;
-import market.orders.Order;
-import market.orders.OrderSide;
-import market.orders.PricedOrder;
+import market.trader.Trader;
 
 import static org.junit.jupiter.api.Assertions.*;
 

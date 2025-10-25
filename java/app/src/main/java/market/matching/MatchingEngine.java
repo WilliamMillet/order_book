@@ -11,9 +11,12 @@ import market.orders.LimitOrder;
 import market.orders.MarketOrder;
 import market.orders.Order;
 import market.orders.PricedOrder;
+import market.trader.MatchSubject;
+import market.trader.MatchSubscriber;
 
-public class MatchingEngine {
+public class MatchingEngine implements MatchSubject {
     private OrderBook book;
+    private final List<MatchSubscriber> matchSubs = new ArrayList<>(); 
 
     public MatchingEngine(OrderBook book) {
         this.book = book;
@@ -26,18 +29,23 @@ public class MatchingEngine {
      * @return The immediate result of the matching process
      */
     public MatchResult placeOrder(Order order) {
+        MatchResult res;
         if (MarketOrder.class.isInstance(order)) {
-            return processMarketOrder((MarketOrder) order);
+            res = processMarketOrder((MarketOrder) order);
         } else if (LimitOrder.class.isInstance(order)) {
-            return processLimitOrder((LimitOrder) order);
+            res = processLimitOrder((LimitOrder) order);
         } else if (FOKOrder.class.isInstance(order)) {
-            return processFOKOrder((FOKOrder) order); 
+            res = processFOKOrder((FOKOrder) order); 
         } else if (IOCOrder.class.isInstance(order)) {
-            return processIOCOrder((IOCOrder) order);
+            res = processIOCOrder((IOCOrder) order);
         } else {
             throw new IllegalArgumentException("Matching engine does not support order of type '" + order.getClass().toString()
              + "'");
         }
+
+        notifySubscribers(res);
+
+        return res;
     }
 
     /**
@@ -191,6 +199,23 @@ public class MatchingEngine {
     private void insertOrders(List<PricedOrder> orders) {
         for (PricedOrder order : orders) {
             book.insertRestingOrder(order);
+        }
+    }
+
+    @Override
+    public void addSubscriber(MatchSubscriber sub) {
+        matchSubs.add(sub);
+    }
+
+    @Override
+    public void removeSubscriber(MatchSubscriber sub) {
+        matchSubs.remove(sub);
+    }
+
+    @Override
+    public void notifySubscribers(MatchResult res) {
+        for (MatchSubscriber sub : matchSubs) {
+            sub.notifyOfMatch(res);
         }
     }
 }

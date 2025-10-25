@@ -1,8 +1,8 @@
 package market.orders;
 
-import market.Trader;
 import market.orders.strategies.MarketOrderPriceAcceptanceStrategy;
 import market.orders.strategies.PriceAcceptanceStrategy;
+import market.trader.Trader;
 
 public final class MarketOrder extends Order {
     private final PriceAcceptanceStrategy paStrategy = new MarketOrderPriceAcceptanceStrategy();

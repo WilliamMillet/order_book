@@ -2,4 +2,4 @@ package market;
 
 import java.util.UUID;
 
-public record Trade(UUID offererId, UUID bidderId, double price, int volume) {}
+public record Trade(UUID offerId, UUID bidId, double price, int volume) {}

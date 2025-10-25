@@ -5,10 +5,11 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import market.Trader;
+import market.trader.Trader;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Timeout(5)
 public class OrderTests {
     @Test
     public void testInverseSide() {
