@@ -17,9 +17,11 @@ import market.matching.MatchingEngine;
 import market.matching.OrderStatus;
 import market.trader.Trader;
 
-
+/**
+ * Tests specific to immediate-or-cancel (IOC) orders
+ */
 @Timeout(5)
-public class FokOrderTests {
+public class IOCOrderTests {
     private OrderBook book;
     private MatchingEngine eng;
     private List<Trader> traders;
@@ -32,40 +34,37 @@ public class FokOrderTests {
         List<String> names = List.of("John", "Jane", "Jack", "Dave", "Mike", "Sally");
         traders = new ArrayList<>(names.stream().map(n -> new Trader(n)).toList());
     }
-    
+
     @Test
-    @DisplayName("Test FOK order where all volume is met immediately")
-    public void testSuccessfulFok() {
+    @DisplayName("Test IOC order where all volume is met immediately")
+    public void testFullyMetIoc() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);
-        
-        Order bid = new LimitOrder(OrderSide.BUY, john, 100, 10.0);
+
+        Order bid = new LimitOrder(OrderSide.BUY, john, 100, 10.00);
         eng.placeOrder(bid);
 
-        assertEquals(book.getBestBid(), bid);
-
-        Order offer = new FOKOrder(OrderSide.SELL, jane, 100, 10.00);
+        Order offer = new IOCOrder(OrderSide.SELL, jane, 100, 8.00);
         MatchResult offerRes = eng.placeOrder(offer);
-        
+
         assertTrue(book.isEmpty());
 
         assertEquals(OrderStatus.FILLED, offerRes.getStatus());
         assertEquals(OrderSide.SELL, offerRes.getSide());
         assertEquals(100, offerRes.getFilledVolume());
         assertEquals(0, offerRes.getRemainingVolume());
-        assertEquals(10, offerRes.getAvgMatchPrice());
+        assertEquals(10.00, offerRes.getAvgMatchPrice());
         assertEquals("", offerRes.getNote());
-        
 
         assertEquals(1, offerRes.getTrades().size());
         Trade trade = offerRes.getTrades().get(0);
-        assertEquals(10, trade.price());
+        assertEquals(10.00, trade.price());
         assertEquals(100, trade.volume());
-    }   
+    }
 
     @Test
-    @DisplayName("Test FOK order that cannot be fully matched is rejected and book unchanged")
-    public void testFailedFok() {
+    @DisplayName("Test IOC order that is partially fulfilled")
+    public void testPartiallyFulfilledIoc() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);
 
@@ -74,20 +73,41 @@ public class FokOrderTests {
         eng.placeOrder(offer1);
         eng.placeOrder(offer2);
 
-        Order bid = new FOKOrder(OrderSide.BUY, jane, 80, 9.00);
+        Order bid = new IOCOrder(OrderSide.BUY, jane, 80, 9.00);
         MatchResult bidRes = eng.placeOrder(bid);
 
-        assertEquals(OrderStatus.ALL_REJECTED, bidRes.getStatus());
-        assertEquals(0, bidRes.getFilledVolume());
-        assertEquals(80, bidRes.getRemainingVolume());
-        assertEquals(0, bidRes.getTrades().size());
-        assertTrue(bidRes.getNote().toLowerCase().contains("liquidity"));
+        assertEquals(OrderStatus.PARTIAL_REJECTION, bidRes.getStatus());
+        assertEquals(60, bidRes.getFilledVolume());
+        assertEquals(20, bidRes.getRemainingVolume());
+        assertEquals(8.00, bidRes.getAvgMatchPrice());
+        assertEquals(1, bidRes.getTrades().size());
 
         assertNull(book.getBestBid());
         Order bestOffer = book.getBestOffer();
         assertNotNull(bestOffer);
-        assertEquals(60, bestOffer.getVolume());
-        assertInstanceOf(PricedOrder.class, bestOffer);
-        assertEquals(8.00, ((PricedOrder) bestOffer).getPrice());
-    }   
+        assertEquals(40, bestOffer.getVolume());
+        assertInstanceOf(LimitOrder.class, bestOffer);
+        assertEquals(10.00, ((LimitOrder)bestOffer).getPrice());
+    }
+
+    @Test
+    @DisplayName("Test IOC order where no volume can be fulfilled")
+    public void testFullyRejectedIoc() {
+        Trader john = traders.get(0);
+        Trader jane = traders.get(1);
+
+        Order bid = new LimitOrder(OrderSide.BUY, john, 60, 1.00);
+        eng.placeOrder(bid);
+
+        Order offer = new IOCOrder(OrderSide.SELL, jane, 60, 8.00);
+        MatchResult offerRes = eng.placeOrder(offer);
+
+        assertNull(book.getBestOffer());
+        assertNotNull(book.getBestBid());
+
+        assertEquals(OrderStatus.ALL_REJECTED, offerRes.getStatus());
+        assertEquals(0, offerRes.getFilledVolume());
+        assertEquals(60, offerRes.getRemainingVolume());
+        assertEquals(0, offerRes.getTrades().size());
+    }
 }

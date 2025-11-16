@@ -5,6 +5,7 @@ import java.util.List;
 
 import market.Trade;
 import market.orders.FOKOrder;
+import market.orders.IOCOrder;
 import market.orders.MarketOrder;
 import market.orders.Order;
 
@@ -75,7 +76,7 @@ public class MatchResultBuilder {
             return OrderStatus.FILLED;
         }
 
-        if (MarketOrder.class.isInstance(incoming) || MarketOrder.class.isInstance(incoming)) {
+        if (MarketOrder.class.isInstance(incoming) || IOCOrder.class.isInstance(incoming)) {
             if (trades.size() > 0) {
                 return OrderStatus.PARTIAL_REJECTION;
             } else {
