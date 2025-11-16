@@ -2,6 +2,7 @@ package market.orders;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
 
 import market.OrderBook;
@@ -31,10 +32,8 @@ class MarketOrderTests {
         traders = new ArrayList<>(names.stream().map(n -> new Trader(n)).toList());
     }
 
-    /**
-     * Test a bid and order of the same quantity and price match correctly
-     */
     @Test
+    @DisplayName("Test a bid and order of the same quantity and price match correctly")
     public void regularMarketOrder() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);
@@ -64,10 +63,8 @@ class MarketOrderTests {
         assertEquals(150, trade.volume());
     }
 
-    /**
-     * Test market order on the sell side
-     */
     @Test
+    @DisplayName("Test market order on the sell side")
     public void marketOrderOffer() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);
@@ -83,12 +80,9 @@ class MarketOrderTests {
         assertEquals(OrderSide.SELL, offer1Res.getSide());
         assertTrue(book.isEmpty());
     }
-
-    /**
-     * Check that a market order does not go through when there are no other
-     * trades for it to match with
-     */
+    
     @Test
+    @DisplayName("Check that a market order does not go through when there are no other trades for it to match with")
     public void marketOrderWhenLowLiquidity() {
         Trader john = traders.get(0);
 
@@ -106,12 +100,9 @@ class MarketOrderTests {
 
         assertNull(book.getBestBid());
     }
-
-    /**
-     * Test that when only some of the volume for a market order can be filled,
-     * this will be handled correctly
-     */
+    
     @Test
+    @DisplayName("Test that when only some of the volume for a market order can be filled, this will be handled correctly")
     public void marketOrderPartialFill() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);
@@ -134,11 +125,8 @@ class MarketOrderTests {
         assertEquals(2, bid1Res.getTrades().size());
     }
 
-    /**
-     * Market orders should execute at the best price, even if this
-     * price is a terrible price
-     */
     @Test
+    @DisplayName("Market orders should execute at the best price, even if this price is a terrible price")
     public void extremePriceDifferenceAllowed() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);
@@ -154,11 +142,9 @@ class MarketOrderTests {
         assertTrue(book.isEmpty());
     }
 
-    /**
-     * If there are several orders of the same price, time should be used as a
-     * tie breaker
-     */
+
     @Test
+    @DisplayName("If there are several orders of the same price, time should be used as a tie breaker")
     public void timeIsUsedAsTieBreaker() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);

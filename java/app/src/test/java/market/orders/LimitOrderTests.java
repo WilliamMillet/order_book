@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 
 import market.OrderBook;
 import market.matching.MatchResult;
@@ -62,10 +63,8 @@ class LimitOrderTests {
         System.out.println("Finished insertion process at time " + LocalDateTime.now().toString());   
     }
 
-    /**
-     * Test simple order match where bid and offer are the same price and volume
-     */
     @Test
+    @DisplayName("Test simple order match where bid and offer are the same price and volume")
     public void simpleLimitOrderPair() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);
@@ -90,10 +89,8 @@ class LimitOrderTests {
         assertEquals(1, offer1Res.getTrades().size());
     }
 
-    /**
-     * Test that match candidates outside of the limit range are not matched
-     */
     @Test
+    @DisplayName("Test that match candidates outside of the limit range are not matched")
     public void orderOutsideOfLimitNotMatched() {
         Trader john = traders.get(0);
         Trader jane = traders.get(1);
@@ -122,10 +119,7 @@ class LimitOrderTests {
         assertEquals(bid2, book.getBestBid());
     }
 
-    /**
-     * Test the result of an incoming order having a volume less than the order
-     * that it matches with.
-     */
+    @DisplayName("Test the result of an incoming order having a volume less than the order that it matches with")
     @Test
     public void matchVolumeGtOrder() {
         Trader john = traders.get(0);
@@ -143,10 +137,8 @@ class LimitOrderTests {
         assertNull(book.getBestBid());
     }
 
-    /**
-     * Test the result of an incoming order having a higher volume than the order
-     * it matches with (when there is only one order to match with)
-     */
+    @DisplayName("Test the result of an incoming order having a higher volume than the order it matches with (when there is only"
+    + " one order to match with)")
     @Test
     public void matchVolumeLtTotalVolume() {
         Trader john = traders.get(0);
@@ -164,10 +156,8 @@ class LimitOrderTests {
         assertEquals(25, bestBid.getVolume());
     }
 
-    /**
-     * Test the result of an incoming order having a higher volume than the order
-     * it matches with, but not the total volume of orders that can be matched with
-     */
+    @DisplayName("Test the result of an incoming order having a higher volume than the order it matches with, but not the total"
+     + " volume of orders that can be matched with")
     @Test
     public void matchVolumeLtOrder() {
         Trader john = traders.get(0);
