@@ -118,6 +118,7 @@ public class MatchingEngine implements MatchSubject {
         MatchResultBuilder matchResBuilder = new MatchResultBuilder(incoming);
         List<PricedOrder> pendingOrdersMatched = new ArrayList<>();
         List<Trade> pendingTrades = new ArrayList<>();
+        int initialVolume = incoming.getVolume();
 
         while (incoming.getVolume() > 0) {
             PricedOrder best = book.getBestOrder(incoming.getSide());
@@ -127,6 +128,7 @@ public class MatchingEngine implements MatchSubject {
                 matchResBuilder.attachNote("Insufficient liquidity to match order fully");
                 insertOrders(pendingOrdersMatched);
                 pendingTrades.clear();
+                incoming.setVolume(initialVolume);
                 break;
             } else {
                 Trade trade = handleMismatchedVolumes(incoming, best);

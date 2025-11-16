@@ -81,7 +81,7 @@ public class MatchResultBuilder {
             } else {
                 return OrderStatus.ALL_REJECTED;
             }
-        } else if (FOKOrder.class.isInstance(trades)) {
+        } else if (FOKOrder.class.isInstance(incoming)) {
             return OrderStatus.ALL_REJECTED;
         } else {
             if (trades.size() > 0) {
