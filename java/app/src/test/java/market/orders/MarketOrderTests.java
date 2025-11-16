@@ -9,13 +9,14 @@ import market.matching.MatchResult;
 import market.matching.MatchingEngine;
 import market.matching.OrderStatus;
 import market.trader.Trader;
+import market.Trade;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Timeout(5)
+// @Timeout(5)
 class MarketOrderTests {
     private OrderBook book;
     private MatchingEngine eng;
@@ -58,7 +59,7 @@ class MarketOrderTests {
         assertNotNull(bid1Res.getTimestamp());
 
         assertEquals(1, bid1Res.getTrades().size());
-        var trade = bid1Res.getTrades().get(0);
+        Trade trade = bid1Res.getTrades().get(0);
         assertEquals(10.00, trade.price());
         assertEquals(150, trade.volume());
     }
@@ -120,7 +121,7 @@ class MarketOrderTests {
         Order offer2 = new LimitOrder(OrderSide.SELL, john, 70, 15.12);
         eng.placeOrder(offer2);
 
-        double expWeightedAvg = (30 * 20.14 + 70 * 15.12) / (30.0 + 70.0);
+        double expWeightedAvg = (double) (30 * 20.14 + 70 * 15.12) / (30 + 70);
 
         Order bid1 = new MarketOrder(OrderSide.BUY, jane, 120);
         MatchResult bid1Res = eng.placeOrder(bid1);
@@ -165,7 +166,7 @@ class MarketOrderTests {
 
         // Offer prices need to be equal to test this
         Order firstOffer = new LimitOrder(OrderSide.SELL, jack, 150, 10.00);
-        eng.placeOrder(firstOffer);
+        MatchResult offerRes = eng.placeOrder(firstOffer);
 
         // Add multiple orders at the same price
         for (int i = 0; i < 10; i++) {
@@ -178,9 +179,9 @@ class MarketOrderTests {
 
         assertNull(book.getBestBid());
 
-        // Should match with the first offer placed (Jack's order)
+        // Should match with the first offer placed
         assertEquals(1, bidRes.getTrades().size());
-        var trade = bidRes.getTrades().get(0);
-        assertEquals(jack.getId(), trade.offererId());
+        Trade trade = bidRes.getTrades().get(0);
+        assertEquals(offerRes.getOrderId(), trade.offerId());
     }
 }

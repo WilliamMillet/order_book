@@ -101,8 +101,8 @@ public class MatchResultBuilder {
         if (trades.size() > 0) {
             return trades
                 .stream()
-                .mapToDouble(t -> t.price())
-                .sum();
+                .mapToDouble(t -> t.price() * t.volume())
+                .sum() / trades.stream().mapToInt(Trade::volume).sum();
         } else {
             return MatchResult.getNoMatches();
         }
