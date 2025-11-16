@@ -23,7 +23,7 @@ public class MatchingEngine implements MatchSubject {
     }
 
     /**
-     * Process an order by matching it with other orders in the order book and or inserting some of the volume int othe order
+     * Process an order by matching it with other orders in the order book and or inserting some of the volume into other order
      * book when applicable
      * @param order The order to insert
      * @return The immediate result of the matching process

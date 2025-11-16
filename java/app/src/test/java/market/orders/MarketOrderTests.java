@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.ArrayList;
 import java.util.List;
 
-// @Timeout(5)
+@Timeout(5)
 class MarketOrderTests {
     private OrderBook book;
     private MatchingEngine eng;
